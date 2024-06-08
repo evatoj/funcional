@@ -35,7 +35,6 @@ def inserir_medicamento():
 
     dados = carregar_dados()
 
-    # Verifica se o medicamento já existe
     for medicamento in dados:
         if medicamento['nome'] == nome and medicamento['fabricante'] == fabricante:
             medicamento['quantidade'] += quantidade
