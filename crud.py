@@ -1,7 +1,7 @@
 import json
 import os
 
-ARQUIVO_DADOS = 'cadastros.json'
+ARQUIVO_DADOS = 'medicamentos.json'
 
 
 def carregar_dados():
@@ -16,102 +16,200 @@ def salvar_dados(dados):
         json.dump(dados, arquivo, indent=4)
 
 
-def inserir_contato():
-    nome = input("Insira o nome: ")
-    email = input("Insira o e-mail: ")
-    telefone = input("Insira o telefone: ")
-    dados = carregar_dados()
-    novo_contato = {
-        'id': len(dados) + 1,
-        'nome': nome,
-        'email': email,
-        'telefone': telefone
-    }
-    dados.append(novo_contato)
-    salvar_dados(dados)
-    print("Contato adicionado.")
+def gerar_novo_id(dados):
+    if not dados:
+        return 1
+    else:
+        return max(medicamento['id'] for medicamento in dados) + 1
 
 
-def editar_contato():
-    id = int(input("Insira o ID do contato a ser editado: "))
+def inserir_medicamento():
+    nome = input("Insira o nome do medicamento: ").strip().lower()
+    fabricante = input("Insira o fabricante: ").strip().lower()
+    try:
+        quantidade = int(input("Insira a quantidade em estoque: "))
+        preco = float(input("Insira o preço: "))
+    except ValueError:
+        print("Quantidade e preço devem ser numéricos.")
+        return
+
     dados = carregar_dados()
-    for contato in dados:
-        if contato['id'] == id:
-            contato['nome'] = input("Insira o novo nome: ")
-            contato['email'] = input("Insira o novo e-mail: ")
-            contato['telefone'] = input("Insira o novo telefone: ")
+
+    # Verifica se o medicamento já existe
+    for medicamento in dados:
+        if medicamento['nome'] == nome and medicamento['fabricante'] == fabricante:
+            medicamento['quantidade'] += quantidade
             salvar_dados(dados)
-            print("Contato atualizado.")
+            print("Quantidade atualizada para o medicamento existente.")
             return
-    print("Contato não encontrado.")
+
+    novo_medicamento = {
+        'id': gerar_novo_id(dados),
+        'nome': nome,
+        'fabricante': fabricante,
+        'quantidade': quantidade,
+        'preco': preco
+    }
+    dados.append(novo_medicamento)
+    salvar_dados(dados)
+    print("Medicamento adicionado.")
+
+
+def editar_medicamento():
+    try:
+        id = int(input("Insira o ID do medicamento a ser editado: "))
+    except ValueError:
+        print("ID inválido.")
+        return
+
+    dados = carregar_dados()
+    for medicamento in dados:
+        if medicamento['id'] == id:
+            medicamento['nome'] = input(
+                "Insira o novo nome do medicamento: ").strip().lower()
+            medicamento['fabricante'] = input(
+                "Insira o novo fabricante: ").strip().lower()
+            try:
+                medicamento['quantidade'] = int(
+                    input("Insira a nova quantidade em estoque: "))
+                medicamento['preco'] = float(input("Insira o novo preço: "))
+            except ValueError:
+                print("Quantidade e preço devem ser numéricos.")
+                return
+
+            salvar_dados(dados)
+            print("Medicamento atualizado.")
+            return
+    print("Medicamento não encontrado.")
+
+
+def atualizar_preco():
+    nome = input("Insira o nome do medicamento: ").strip().lower()
+    fabricante = input("Insira o fabricante: ").strip().lower()
+    try:
+        novo_preco = float(input("Insira o novo preço: "))
+    except ValueError:
+        print("O preço deve ser numérico.")
+        return
+
+    dados = carregar_dados()
+    for medicamento in dados:
+        if medicamento['nome'] == nome and medicamento['fabricante'] == fabricante:
+            medicamento['preco'] = novo_preco
+            salvar_dados(dados)
+            print("Preço atualizado.")
+            return
+
+    print("Medicamento não encontrado.")
+
+
+def atualizar_estoque():
+    nome = input("Insira o nome do medicamento: ").strip().lower()
+    fabricante = input("Insira o fabricante: ").strip().lower()
+    try:
+        nova_quantidade = int(input("Insira a nova quantidade em estoque: "))
+    except ValueError:
+        print("A quantidade deve ser numérica.")
+        return
+
+    dados = carregar_dados()
+    for medicamento in dados:
+        if medicamento['nome'] == nome and medicamento['fabricante'] == fabricante:
+            medicamento['quantidade'] = nova_quantidade
+            salvar_dados(dados)
+            print("Estoque atualizado.")
+            return
+
+    print("Medicamento não encontrado.")
 
 
 def pesquisar_por_nome():
-    nome = input("Insira o nome a ser pesquisado: ")
+    nome = input(
+        "Insira o nome do medicamento a ser pesquisado: ").strip().lower()
     dados = carregar_dados()
     resultados = [
-        contato for contato in dados if contato['nome'].lower() == nome.lower()]
+        medicamento for medicamento in dados if medicamento['nome'] == nome]
     if resultados:
-        for contato in resultados:
-            print(f"ID: {contato['id']}, Nome: {
-                  contato['nome']}, E-mail: {contato['email']}, Telefone: {contato['telefone']}")
+        for medicamento in resultados:
+            print(f"ID: {medicamento['id']}, Nome: {medicamento['nome'].title()}, Fabricante: {
+                  medicamento['fabricante'].title()}, Quantidade: {medicamento['quantidade']}, Preço: {medicamento['preco']} R$")
     else:
-        print("Nenhum contato encontrado com esse nome.")
+        print("Nenhum medicamento encontrado com esse nome.")
 
 
-def remover_contato():
-    id = int(input("Insira o ID do contato a ser removido: "))
+def remover_medicamento():
+    try:
+        id = int(input("Insira o ID do medicamento a ser removido: "))
+    except ValueError:
+        print("ID inválido.")
+        return
+
     dados = carregar_dados()
-    dados = [contato for contato in dados if contato['id'] != id]
-    salvar_dados(dados)
-    print("Contato removido.")
+    novos_dados = [
+        medicamento for medicamento in dados if medicamento['id'] != id]
+    if len(novos_dados) == len(dados):
+        print("Medicamento não encontrado.")
+    else:
+        salvar_dados(novos_dados)
+        print("Medicamento removido.")
 
 
 def exibir_todos():
     dados = carregar_dados()
     if not dados:
-        print("Nenhum contato cadastrado ainda.")
+        print("Nenhum medicamento cadastrado ainda.")
     else:
-        for contato in dados:
-            print(f"ID: {contato['id']}, Nome: {
-                  contato['nome']}, E-mail: {contato['email']}, Telefone: {contato['telefone']}")
+        for medicamento in dados:
+            print(f"ID: {medicamento['id']}, Nome: {medicamento['nome'].title()}, Fabricante: {
+                  medicamento['fabricante'].title()}, Quantidade: {medicamento['quantidade']}, Preço: {medicamento['preco']} R$")
 
 
 def exibir_um():
-    id = int(input("Insira o ID do contato a ser exibido: "))
+    try:
+        id = int(input("Insira o ID do medicamento a ser exibido: "))
+    except ValueError:
+        print("ID inválido.")
+        return
+
     dados = carregar_dados()
-    for contato in dados:
-        if contato['id'] == id:
-            print(f"ID: {contato['id']}, Nome: {
-                  contato['nome']}, E-mail: {contato['email']}, Telefone: {contato['telefone']}")
+    for medicamento in dados:
+        if medicamento['id'] == id:
+            print(f"ID: {medicamento['id']}, Nome: {medicamento['nome'].title()}, Fabricante: {
+                  medicamento['fabricante'].title()}, Quantidade: {medicamento['quantidade']}, Preço: {medicamento['preco']} R$")
             return
-    print("Contato não encontrado.")
+    print("Medicamento não encontrado.")
 
 
 def menu():
     while True:
-        print("\n1. Inserir Contato")
-        print("2. Editar Contato")
-        print("3. Pesquisar por Nome")
-        print("4. Remover Contato")
-        print("5. Exibir Todos os Contatos")
-        print("6. Buscar Contato por ID")
-        print("7. Sair")
+        print("\n1. Inserir Medicamento")
+        print("2. Editar Medicamento")
+        print("3. Atualizar Preço")
+        print("4. Atualizar Estoque")
+        print("5. Pesquisar por Nome")
+        print("6. Remover Medicamento")
+        print("7. Exibir Todos os Medicamentos")
+        print("8. Buscar Medicamento por ID")
+        print("9. Sair")
         escolha = input("Escolha uma opção: ")
 
         if escolha == '1':
-            inserir_contato()
+            inserir_medicamento()
         elif escolha == '2':
-            editar_contato()
+            editar_medicamento()
         elif escolha == '3':
-            pesquisar_por_nome()
+            atualizar_preco()
         elif escolha == '4':
-            remover_contato()
+            atualizar_estoque()
         elif escolha == '5':
-            exibir_todos()
+            pesquisar_por_nome()
         elif escolha == '6':
-            exibir_um()
+            remover_medicamento()
         elif escolha == '7':
+            exibir_todos()
+        elif escolha == '8':
+            exibir_um()
+        elif escolha == '9':
             print("Saindo...")
             break
         else:
